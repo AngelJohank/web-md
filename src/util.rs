@@ -12,3 +12,13 @@ pub fn get_cmd_args() -> Vec<String> {
 
     args
 }
+
+pub fn get_output_filename(mut filename: String) -> String {
+    if filename.ends_with(".md") {
+        filename.replace_range(filename.len() - 3.., ".html");
+    } else {
+        filename += ".html";
+    }
+
+    filename
+}

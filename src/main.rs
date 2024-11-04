@@ -3,11 +3,12 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Read;
+use std::path::Path;
 use std::path::PathBuf;
 
 fn main() -> io::Result<()> {
     // get the first cmd argument
-    let filename = match env::args().skip(1).next() {
+    let file_path = match env::args().skip(1).next() {
         Some(v) => v,
         None => {
             println!("no file listed");
@@ -34,7 +35,7 @@ fn main() -> io::Result<()> {
     fs::write(css_path, css_file)?;
 
     // open file
-    let mut md_file = File::open(&filename)?;
+    let mut md_file = File::open(&file_path)?;
     let mut md_contents = String::new();
     md_file.read_to_string(&mut md_contents)?;
 
@@ -44,18 +45,30 @@ fn main() -> io::Result<()> {
     let html_content = html_head + &html_body;
 
     // write to filename.html
-    let output_path = get_output_path(filename);
+    let output_path = get_output_path(file_path);
     fs::write(output_path, html_content)?;
 
     Ok(())
 }
 
-pub fn get_output_path(mut filename: String) -> PathBuf {
-    if filename.ends_with(".md") {
-        filename.replace_range(filename.len() - 3.., ".html");
+pub fn get_output_path(mut file_path: String) -> PathBuf {
+    if file_path.ends_with(".md") {
+        file_path.replace_range(file_path.len() - 3.., ".html");
     } else {
-        filename += ".html";
+        file_path += ".html";
     }
 
-    PathBuf::from("./dist").join(filename)
+    let new_file_path = Path::new(&file_path);
+    let dist_path = Path::new("./dist");
+
+    if let Some(path) = new_file_path.parent() {
+        let dirs = dist_path.join(path);
+
+        // create dirs inside ./dist
+        if let Err(err) = fs::create_dir_all(dirs) {
+            eprintln!("Could not create dirs inside .dist: {}", err)
+        }
+    }
+
+    return dist_path.join(new_file_path);
 }

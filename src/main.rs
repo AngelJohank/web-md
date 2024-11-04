@@ -1,10 +1,7 @@
 use std::env;
-use std::fs;
-use std::fs::File;
-use std::io;
-use std::io::Read;
-use std::path::Path;
-use std::path::PathBuf;
+use std::fs::{self, File};
+use std::io::{self, Read};
+use std::path::{Path, PathBuf};
 
 fn main() -> io::Result<()> {
     // get the first cmd argument

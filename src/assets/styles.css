@@ -1,3 +1,14 @@
-* {
-    color: red;
+/* Minimal styling for semantic HTML using Pico.css */
+@import url("https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.classless.blue.min.css");
+
+body {
+    max-width: 60vw;
+    margin: auto;
+}
+
+/* mobile devices config */
+@media (max-width: 850px) {
+    body {
+        max-width: 90vw;
+    }
 }

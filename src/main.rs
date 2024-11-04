@@ -3,7 +3,6 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Read;
-use std::path;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -35,7 +34,7 @@ fn main() -> io::Result<()> {
     let css_path = "./dist/style.css";
     fs::write(css_path, css_file)?;
 
-    // open file
+    // open md_file
     let mut md_file = File::open(&file_path)?;
     let mut md_contents = String::new();
     md_file.read_to_string(&mut md_contents)?;

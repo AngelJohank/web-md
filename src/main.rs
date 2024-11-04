@@ -3,6 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Read;
+use std::path;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -51,24 +52,13 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-pub fn get_output_path(mut file_path: String) -> PathBuf {
-    if file_path.ends_with(".md") {
-        file_path.replace_range(file_path.len() - 3.., ".html");
-    } else {
-        file_path += ".html";
-    }
-
-    let new_file_path = Path::new(&file_path);
+pub fn get_output_path(file_path: String) -> PathBuf {
     let dist_path = Path::new("./dist");
 
-    if let Some(path) = new_file_path.parent() {
-        let dirs = dist_path.join(path);
+    // Extract the file name without extension, assuming the file path is valid
+    // since we opened a file before running this function
+    let file_stem = Path::new(&file_path).file_stem().unwrap();
 
-        // create dirs inside ./dist
-        if let Err(err) = fs::create_dir_all(dirs) {
-            eprintln!("Could not create dirs inside .dist: {}", err)
-        }
-    }
-
-    return dist_path.join(new_file_path);
+    let file_name = format!("{}.html", file_stem.to_string_lossy());
+    dist_path.join(file_name)
 }

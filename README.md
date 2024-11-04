@@ -4,7 +4,7 @@ A simple rust program that parses a given markdown file and turns it into a form
 
 ## How to run
 
-```
+```bash
 cargo run ./path_to_your_file.md
 
 ```

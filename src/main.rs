@@ -64,32 +64,34 @@ fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
     let file_stem = file_path.file_stem().unwrap_or_default();
     let filename = format!("{}.html", file_stem.to_string_lossy());
 
-    // export_path = working_dir/dist/
-    let mut export_path = create_dist_folder(working_dir)?;
-    create_styles(&export_path)?;
+    // export_path = working_dir/build/
+    let mut build_path = create_build_dir(working_dir)?;
+    create_style_file(&build_path)?;
 
-    // export_path = working_dir/dist/filename.html
-    export_path.push(filename);
-    fs::write(export_path, html_content)?;
+    // export_path = working_dir/build/filename.html
+    build_path.push(filename);
+    println!("Exporting to: {}", build_path.to_string_lossy());
+    fs::write(build_path, html_content)?;
 
     Ok(())
 }
 
-fn create_styles(dist_path: &Path) -> io::Result<()> {
+fn create_style_file(path: &Path) -> io::Result<()> {
     let styles = include_bytes!("./assets/styles.css");
-    let styles_path = dist_path.join("style.css");
+    let styles_path = path.join("style.css");
 
     fs::write(styles_path, styles)
 }
 
-fn create_dist_folder(path: &Path) -> io::Result<PathBuf> {
-    let path = path.join("dist");
+fn create_build_dir(working_dir: &Path) -> io::Result<PathBuf> {
+    let build_path = working_dir.join("build");
 
-    use io::ErrorKind::AlreadyExists;
+    if build_path.is_dir() {
+        return Ok(build_path);
+    }
 
-    match fs::create_dir(&path) {
-        Ok(_) => Ok(path),
-        Err(err) if err.kind() == AlreadyExists => Ok(path),
+    match fs::create_dir(&build_path) {
+        Ok(_) => Ok(build_path),
         Err(err) => {
             println!("Error creating dist directory");
             Err(err)

@@ -45,7 +45,6 @@ fn md_to_html(value: String) -> String {
     format!("{html_head}{html_body}")
 }
 
-/// TODO
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
     let working_dir = file_path.parent().unwrap_or(Path::new("."));
 

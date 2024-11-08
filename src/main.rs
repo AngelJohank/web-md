@@ -57,12 +57,8 @@ fn md_to_html(value: String) -> String {
 }
 
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
-    //  working_dir = filepath folder location
     let working_dir = file_path.parent().unwrap_or(Path::new("."));
-
-    // TODO: hanlde unwrap_or_default
-    let file_stem = file_path.file_stem().unwrap_or_default();
-    let filename = format!("{}.html", file_stem.to_string_lossy());
+    let filename = get_file_name(&file_path);
 
     // export_path = working_dir/build/
     let mut build_path = create_build_dir(working_dir)?;
@@ -70,15 +66,23 @@ fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
 
     // export_path = working_dir/build/filename.html
     build_path.push(filename);
-    println!("Exporting to: {}", build_path.to_string_lossy());
     fs::write(build_path, html_content)?;
 
     Ok(())
 }
 
-fn create_style_file(path: &Path) -> io::Result<()> {
+fn get_file_name(file_path: &Path) -> String {
+    let file_stem = match file_path.file_stem() {
+        Some(stem) => stem.to_string_lossy().to_string(),
+        None => String::from("result"),
+    };
+
+    format!("{}.html", file_stem)
+}
+
+fn create_style_file(working_dir: &Path) -> io::Result<()> {
     let styles = include_bytes!("./assets/styles.css");
-    let styles_path = path.join("style.css");
+    let styles_path = working_dir.join("style.css");
 
     fs::write(styles_path, styles)
 }

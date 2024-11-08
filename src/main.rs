@@ -5,56 +5,80 @@ use std::path::{Path, PathBuf};
 
 fn main() -> io::Result<()> {
     // get the first cmd argument
-    let file_path = match env::args().skip(1).next() {
-        Some(v) => v,
-        None => {
-            println!("no file listed");
-            std::process::exit(0)
-        }
-    };
-
-    // create dist directory
-    if let Err(err) = fs::create_dir("dist") {
-        use io::ErrorKind;
-
-        match err.kind() {
-            ErrorKind::AlreadyExists => (),
-            _ => {
-                eprintln!("Error creating dist directory: {}", err);
-                std::process::exit(0)
-            }
-        }
-    }
-
-    // create styles file
-    let css_file = include_bytes!("./assets/styles.css");
-    let css_path = "./dist/style.css";
-    fs::write(css_path, css_file)?;
-
+    let file_path = get_file_path();
     // open md_file
-    let mut md_file = File::open(&file_path)?;
-    let mut md_contents = String::new();
-    md_file.read_to_string(&mut md_contents)?;
-
+    let file_contents = get_file_contents(&file_path)?;
     // turn md_contents to html
-    let html_head = String::from("<head><link rel=\"stylesheet\" href=\"style.css\"></head>");
-    let html_body = markdown::to_html(&md_contents);
-    let html_content = html_head + &html_body;
-
+    let html_content = md_to_html(file_contents);
     // write to filename.html
-    let output_path = get_output_path(file_path);
-    fs::write(output_path, html_content)?;
+    export_html(file_path, html_content)?;
 
     Ok(())
 }
 
-pub fn get_output_path(file_path: String) -> PathBuf {
-    let dist_path = Path::new("./dist");
+// get the path of the first element in env::args()
+fn get_file_path() -> PathBuf {
+    env::args()
+        .skip(1)
+        .next()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| exit("no files listed"))
+}
 
-    // Extract the file name without extension, assuming the file path is valid
-    // since we opened a file before running this function
-    let file_stem = Path::new(&file_path).file_stem().unwrap();
+fn exit(msg: &str) -> ! {
+    println!("{}", msg);
+    std::process::exit(0);
+}
 
-    let file_name = format!("{}.html", file_stem.to_string_lossy());
-    dist_path.join(file_name)
+fn get_file_contents(file_path: &Path) -> io::Result<String> {
+    let mut file = File::open(&file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    Ok(contents)
+}
+
+fn md_to_html(value: String) -> String {
+    let html_head = "<head><link rel=\"stylesheet\" href=\"style.css\"></head>";
+    let html_body = markdown::to_html(&value);
+
+    format!("{html_head}{html_body}")
+}
+
+/// TODO
+fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
+    let working_dir = file_path.parent().unwrap_or(Path::new("."));
+
+    let file_name = file_path.file_stem().unwrap_or_default();
+    let full_file_name = format!("{}.html", file_name.to_string_lossy());
+
+    let mut export_path = create_dist_folder(working_dir)?;
+    create_styles(&export_path)?;
+
+    export_path.push(full_file_name);
+    fs::write(export_path, html_content)?;
+
+    Ok(())
+}
+
+fn create_dist_folder(path: &Path) -> io::Result<PathBuf> {
+    let path = path.join("dist");
+
+    use io::ErrorKind::AlreadyExists;
+
+    match fs::create_dir(&path) {
+        Ok(_) => Ok(path),
+        Err(err) if err.kind() == AlreadyExists => Ok(path),
+        Err(err) => {
+            println!("Error creating dist directory");
+            Err(err)
+        }
+    }
+}
+
+fn create_styles(dist_path: &Path) -> io::Result<()> {
+    let styles = include_bytes!("./assets/styles.css");
+    let styles_path = dist_path.join("style.css");
+
+    fs::write(styles_path, styles)
 }

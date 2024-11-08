@@ -16,13 +16,24 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-// get the path of the first element in env::args()
 fn get_file_path() -> PathBuf {
-    env::args()
+    // Get the first command-line argument
+    let file_path = env::args()
         .skip(1)
         .next()
         .map(PathBuf::from)
-        .unwrap_or_else(|| exit("no files listed"))
+        .unwrap_or_else(|| exit("no file listed"));
+
+    // Check if the file exists
+    if !file_path.is_file() {
+        let msg = format!(
+            "Path: {}\ndoes not point to a file",
+            file_path.to_string_lossy()
+        );
+        exit(&msg)
+    }
+
+    file_path
 }
 
 fn exit(msg: &str) -> ! {
@@ -46,18 +57,29 @@ fn md_to_html(value: String) -> String {
 }
 
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
+    //  working_dir = filepath folder location
     let working_dir = file_path.parent().unwrap_or(Path::new("."));
 
-    let file_name = file_path.file_stem().unwrap_or_default();
-    let full_file_name = format!("{}.html", file_name.to_string_lossy());
+    // TODO: hanlde unwrap_or_default
+    let file_stem = file_path.file_stem().unwrap_or_default();
+    let filename = format!("{}.html", file_stem.to_string_lossy());
 
+    // export_path = working_dir/dist/
     let mut export_path = create_dist_folder(working_dir)?;
     create_styles(&export_path)?;
 
-    export_path.push(full_file_name);
+    // export_path = working_dir/dist/filename.html
+    export_path.push(filename);
     fs::write(export_path, html_content)?;
 
     Ok(())
+}
+
+fn create_styles(dist_path: &Path) -> io::Result<()> {
+    let styles = include_bytes!("./assets/styles.css");
+    let styles_path = dist_path.join("style.css");
+
+    fs::write(styles_path, styles)
 }
 
 fn create_dist_folder(path: &Path) -> io::Result<PathBuf> {
@@ -73,11 +95,4 @@ fn create_dist_folder(path: &Path) -> io::Result<PathBuf> {
             Err(err)
         }
     }
-}
-
-fn create_styles(dist_path: &Path) -> io::Result<()> {
-    let styles = include_bytes!("./assets/styles.css");
-    let styles_path = dist_path.join("style.css");
-
-    fs::write(styles_path, styles)
 }

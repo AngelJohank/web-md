@@ -4,27 +4,30 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 fn main() -> io::Result<()> {
-    // get the first cmd argument
+    // get the first cmd arguments
     let file_path = get_file_path();
+
     // open md_file
     let file_contents = get_file_contents(&file_path)?;
+
     // turn md_contents to html
     let html_content = md_to_html(file_contents);
+
     // write to filename.html
     export_html(file_path, html_content)?;
 
     Ok(())
 }
 
+/// Gets the first command-line argument and turns it into a `PathBuf`
+/// if `env::args` is empty or the file does not exists, exits the program
 fn get_file_path() -> PathBuf {
-    // Get the first command-line argument
     let file_path = env::args()
         .skip(1)
         .next()
         .map(PathBuf::from)
         .unwrap_or_else(|| exit("no file listed"));
 
-    // Check if the file exists
     if !file_path.is_file() {
         let msg = format!(
             "Path: {}\ndoes not point to a file",
@@ -36,11 +39,13 @@ fn get_file_path() -> PathBuf {
     file_path
 }
 
+/// Exit the program with a custom message and exit code of 0
 fn exit(msg: &str) -> ! {
     println!("{}", msg);
     std::process::exit(0);
 }
 
+/// Attempts to open a file and read it's contents to a String
 fn get_file_contents(file_path: &Path) -> io::Result<String> {
     let mut file = File::open(&file_path)?;
     let mut contents = String::new();
@@ -49,6 +54,7 @@ fn get_file_contents(file_path: &Path) -> io::Result<String> {
     Ok(contents)
 }
 
+/// Takes a markdown String and turns it into an html String
 fn md_to_html(value: String) -> String {
     let html_head = "<head><link rel=\"stylesheet\" href=\"style.css\"></head>";
     let html_body = markdown::to_html(&value);
@@ -56,15 +62,23 @@ fn md_to_html(value: String) -> String {
     format!("{html_head}{html_body}")
 }
 
+/// With the given `file_path` and `html_content` creates a build folder inside the
+/// `file_path` parent folder. The build folder looks like this: `parent_folder/build`
+///
+/// Then, inside the build folder creates a `style.css` file
+/// and writes the html contents into `filename.html`
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
-    let working_dir = file_path.parent().unwrap_or(Path::new("."));
-    let filename = get_file_name(&file_path);
+    let root = Path::new(".");
+    let parent_folder = file_path.parent().unwrap_or(root);
 
-    // export_path = working_dir/build/
-    let mut build_path = create_build_dir(working_dir)?;
+    // create build folder inside parent_folder
+    let mut build_path = create_build_dir(parent_folder)?;
+
+    // write style.css inside build folder
     create_style_file(&build_path)?;
 
-    // export_path = working_dir/build/filename.html
+    // write filename.html inside build folder
+    let filename = get_file_name(&file_path);
     build_path.push(filename);
     fs::write(build_path, html_content)?;
 
@@ -80,15 +94,15 @@ fn get_file_name(file_path: &Path) -> String {
     format!("{}.html", file_stem)
 }
 
-fn create_style_file(working_dir: &Path) -> io::Result<()> {
+fn create_style_file(path: &Path) -> io::Result<()> {
     let styles = include_bytes!("./assets/styles.css");
-    let styles_path = working_dir.join("style.css");
+    let styles_path = path.join("style.css");
 
     fs::write(styles_path, styles)
 }
 
-fn create_build_dir(working_dir: &Path) -> io::Result<PathBuf> {
-    let build_path = working_dir.join("build");
+fn create_build_dir(path: &Path) -> io::Result<PathBuf> {
+    let build_path = path.join("build");
 
     if build_path.is_dir() {
         return Ok(build_path);

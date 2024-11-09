@@ -9,7 +9,7 @@ fn main() -> io::Result<()> {
     let file_contents = webmd::read_file_to_string(&file_path)?;
     let html_content = webmd::md_to_html(file_contents);
 
-    // write to: build/filename.html
+    // write to: file_path/build/filename.html
     export_html(file_path, html_content)?;
 
     Ok(())

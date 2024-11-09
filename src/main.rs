@@ -4,16 +4,11 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 fn main() -> io::Result<()> {
-    // get the first cmd arguments
     let file_path = get_file_path();
-
-    // open md_file
-    let file_contents = get_file_contents(&file_path)?;
-
-    // turn md_contents to html
+    let file_contents = read_file_to_string(&file_path)?;
     let html_content = md_to_html(file_contents);
 
-    // write to filename.html
+    // write to: build/filename.html
     export_html(file_path, html_content)?;
 
     Ok(())
@@ -39,14 +34,12 @@ fn get_file_path() -> PathBuf {
     file_path
 }
 
-/// Exit the program with a custom message and exit code of 0
 fn exit(msg: &str) -> ! {
     println!("{}", msg);
     std::process::exit(0);
 }
 
-/// Attempts to open a file and read it's contents to a String
-fn get_file_contents(file_path: &Path) -> io::Result<String> {
+fn read_file_to_string(file_path: &Path) -> io::Result<String> {
     let mut file = File::open(&file_path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -54,7 +47,6 @@ fn get_file_contents(file_path: &Path) -> io::Result<String> {
     Ok(contents)
 }
 
-/// Takes a markdown String and turns it into an html String
 fn md_to_html(value: String) -> String {
     let html_head = "<head><link rel=\"stylesheet\" href=\"style.css\"></head>";
     let html_body = markdown::to_html(&value);
@@ -62,22 +54,17 @@ fn md_to_html(value: String) -> String {
     format!("{html_head}{html_body}")
 }
 
-/// With the given `file_path` and `html_content` creates a build folder inside the
-/// `file_path` parent folder. The build folder looks like this: `parent_folder/build`
-///
-/// Then, inside the build folder creates a `style.css` file
-/// and writes the html contents into `filename.html`
+/// Creates a build folder inside the `file_path` parent folder. Then, inside
+/// the build folder creates a `style.css` file and writes the html contents
+/// into `filename.html`
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
-    let root = Path::new(".");
-    let parent_folder = file_path.parent().unwrap_or(root);
-
-    // create build folder inside parent_folder
+    let parent_folder = file_path.parent().unwrap_or(Path::new("."));
     let mut build_path = create_build_dir(parent_folder)?;
 
-    // write style.css inside build folder
+    // write styles
     create_style_file(&build_path)?;
 
-    // write filename.html inside build folder
+    // write html
     let filename = get_file_name(&file_path);
     build_path.push(filename);
     fs::write(build_path, html_content)?;

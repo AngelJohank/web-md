@@ -15,10 +15,8 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-/// Creates a build folder inside the `file_path` parent folder. Then, inside
-/// the build folder creates a `style.css` file and writes the html contents
-/// into `filename.html`
 fn export_html(file_path: PathBuf, html_content: String) -> io::Result<()> {
+    // create build_path
     let default_path = Path::new(".");
     let parent_folder = file_path.parent().unwrap_or(default_path);
     let mut build_path = webmd::create_build_dir(parent_folder)?;

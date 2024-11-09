@@ -12,8 +12,7 @@ fn exit(msg: &str) -> ! {
 /// if `env::args` is empty or the file does not exists, exits the program
 pub fn get_file_path() -> PathBuf {
     let file_path = env::args()
-        .skip(1)
-        .next()
+        .nth(1)
         .map(PathBuf::from)
         .unwrap_or_else(|| exit("no file listed"));
 
